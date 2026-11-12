@@ -18,9 +18,10 @@
             android:id="@+id/textZikr"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:fontFamily="@font/amiri"
             android:textColor="@color/text_dark"
             android:textSize="20sp"
-            android:lineSpacingExtra="8dp"
+            android:lineSpacingExtra="6dp"
             android:layout_marginBottom="12dp"/>
 
         <LinearLayout
@@ -46,7 +47,8 @@
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:paddingHorizontal="16dp"
-                android:paddingVertical="8dp"/>
+                android:paddingVertical="8dp"
+                android:gravity="center"/>
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

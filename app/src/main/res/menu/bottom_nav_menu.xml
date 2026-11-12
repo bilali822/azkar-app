@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/nav_morning" android:title="الصباح" />
+    <item android:id="@+id/nav_evening" android:title="المساء" />
+    <item android:id="@+id/nav_times" android:title="المواقيت" />
+    <item android:id="@+id/nav_more" android:title="المزيد" />
+    <item android:id="@+id/nav_settings" android:title="الإعدادات" />
+</menu>
