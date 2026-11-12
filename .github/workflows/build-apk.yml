@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Native Android APK
 on:
   push:
     branches: [ main ]
@@ -11,75 +11,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-
-      - name: Install Capacitor
-        run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-
-      - name: Prepare Web Assets
-        run: |
-          mkdir -p www
-          cp -r index.html style.css app.js manifest.json sw.js icons audio www/
-
-      - name: Add Android Platform
-        run: |
-          npx cap add android
-
-      - name: Patch build.gradle safely with Python
-        run: |
-          python3 -c "
-          import os
-          path = 'android/app/build.gradle'
-          if not os.path.exists(path):
-              raise SystemExit('File not found: ' + path)
-          
-          with open(path, 'r', encoding='utf-8') as f:
-              content = f.read()
-          
-          strategy = '''
-          configurations.all {
-              resolutionStrategy {
-                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
-                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
-              }
-          }
-          '''
-          
-          if 'resolutionStrategy' not in content:
-              content = content.replace('dependencies {', strategy + '\ndependencies {')
-              with open(path, 'w', encoding='utf-8') as f:
-                  f.write(content)
-              print('✅ Injected resolutionStrategy successfully.')
-          else:
-              print('ℹ️ resolutionStrategy already exists.')
-          "
-
-      - name: Sync Web Assets
-        run: |
-          npx cap sync android
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build APK
-        run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug
+        run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zikr-App-APK
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Native-Zikr-App
+          path: app/build/outputs/apk/debug/app-debug.apk
