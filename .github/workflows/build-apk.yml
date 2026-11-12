@@ -25,7 +25,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
 
-
       - name: Install Capacitor
         run: |
           npm init -y
@@ -39,6 +38,15 @@ jobs:
       - name: Add Android Platform
         run: |
           npx cap add android
+
+      - name: Patch build.gradle files to resolve Kotlin conflicts
+        run: |
+          cd android
+          # 1. تعديل الملف الرئيسي (project-level build.gradle)
+          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.8.22'/" build.gradle
+          # 2. تعديل ملف التطبيق (app-level build.gradle)
+          cd app
+          sed -i '/^dependencies {/i\\    configurations.all {\\n        resolutionStrategy {\\n            force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"\\n            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"\\n        }\\n    }\\n' build.gradle
 
       - name: Sync Web Assets
         run: |
