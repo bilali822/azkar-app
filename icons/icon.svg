@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- الخلفية الداكنة مع حواف دائرية -->
+  <rect width="512" height="512" rx="112" fill="#0d1b2a"/>
+  
+  <!-- توهج خفيف حول الساعة -->
+  <circle cx="256" cy="256" r="190" stroke="rgba(58, 158, 143, 0.15)" stroke-width="8" fill="none"/>
+  
+  <!-- دائرة الساعة الرئيسية (مثل السبلاش) -->
+  <circle cx="256" cy="256" r="160" stroke="#3a9e8f" stroke-width="24" fill="none" />
+  
+  <!-- عقارب الساعة -->
+  <path d="M256 136 v120 l80 40" stroke="#3a9e8f" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  
+  <!-- النقطة المركزية -->
+  <circle cx="256" cy="256" r="12" fill="#3a9e8f" />
+</svg>
