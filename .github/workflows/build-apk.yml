@@ -39,14 +39,34 @@ jobs:
         run: |
           npx cap add android
 
-      - name: Patch build.gradle files to resolve Kotlin conflicts
+      - name: Patch build.gradle safely with Python
         run: |
-          cd android
-          # 1. تعديل الملف الرئيسي (project-level build.gradle)
-          sed -i "s/ext.kotlin_version = .*/ext.kotlin_version = '1.8.22'/" build.gradle
-          # 2. تعديل ملف التطبيق (app-level build.gradle)
-          cd app
-          sed -i '/^dependencies {/i\\    configurations.all {\\n        resolutionStrategy {\\n            force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"\\n            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"\\n        }\\n    }\\n' build.gradle
+          python3 -c "
+          import os
+          path = 'android/app/build.gradle'
+          if not os.path.exists(path):
+              raise SystemExit('File not found: ' + path)
+          
+          with open(path, 'r', encoding='utf-8') as f:
+              content = f.read()
+          
+          strategy = '''
+          configurations.all {
+              resolutionStrategy {
+                  force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+                  force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+              }
+          }
+          '''
+          
+          if 'resolutionStrategy' not in content:
+              content = content.replace('dependencies {', strategy + '\ndependencies {')
+              with open(path, 'w', encoding='utf-8') as f:
+                  f.write(content)
+              print('✅ Injected resolutionStrategy successfully.')
+          else:
+              print('ℹ️ resolutionStrategy already exists.')
+          "
 
       - name: Sync Web Assets
         run: |
