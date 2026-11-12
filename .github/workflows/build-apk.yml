@@ -31,9 +31,10 @@ jobs:
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: Initialize Capacitor
+      - name: Prepare Web Assets
         run: |
-          npx cap init "ذكر و طمأنينة" "com.zikr.tumaaneena" --web-dir .
+          mkdir -p www
+          cp -r index.html style.css app.js manifest.json sw.js icons audio www/
 
       - name: Add Android Platform
         run: |
