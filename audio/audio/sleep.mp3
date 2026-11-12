@@ -1,7 +1,0 @@
-<html>
-<head><title>403 Forbidden</title></head>
-<body><a href="https://old.islamhouse.com/cdn-cgi/content?id=n0FYikH7HFBHWeGj_gg5SiyIOsy3jtRqNbufARcHC4s-1794421331.8281837-1.2.1.1-_Vn2IpZ5pCgXsKWPLbb7EL.YoEnivEID773Wb0QNd.ewowV5zzHfUWft6ZgWV8ue" aria-hidden="true" rel="nofollow noopener" style="display: none !important; visibility: hidden !important"></a>
-<center><h1>403 Forbidden</h1></center>
-<hr><center>nginx</center>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a58f522bee025729',t:'MTc5NDQyMTMzMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a58f522bee025729',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
-</html>
