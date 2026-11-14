@@ -1,0 +1,20 @@
+{
+  "packageId": "com.zikr.tumaaneena",
+  "host": "bilali822.github.io",
+  "name": "ذكر و طمأنينة",
+  "launcherName": "ذكر و طمأنينة",
+  "display": "standalone",
+  "themeColor": "#3a9e8f",
+  "navigationColor": "#0d1b2a",
+  "backgroundColor": "#0d1b2a",
+  "startUrl": "/azkar-app/",
+  "iconUrl": "https://bilali822.github.io/azkar-app/icons/icon-512.png",
+  "maskableIconUrl": "https://bilali822.github.io/azkar-app/icons/icon-512.png",
+  "shortcuts": [],
+  "webManifestUrl": "https://bilali822.github.io/azkar-app/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "enableNotifications": true,
+  "generatorApp": "bubblewrap-cli",
+  "webviewFallback": false
+}
