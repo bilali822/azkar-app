@@ -811,3 +811,57 @@ body {
   font-style: normal;
   font-display: swap;
 }
+
+@font-face {
+  font-family: 'Amiri';
+  src: url('fonts/Amiri-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cairo';
+  src: url('fonts/Cairo-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ===== استخدام الخطوط المحسنة (WOFF2) لتسريع التطبيق ===== */
+@font-face {
+  font-family: 'Amiri';
+  src: url('fonts/Amiri-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cairo';
+  src: url('fonts/Cairo-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ===== تحسينات الأداء القصوى (GPU) ===== */
+.zikr-card, .more-card, .audio-card, .name-card-new {
+  content-visibility: auto;
+  contain-intrinsic-size: 100px;
+  will-change: transform;
+  transform: translateZ(0);
+}
+.bottom-nav, .app-header { will-change: transform; }
+
+/* ===== استخدام خطوط wakeb-font (بدلاً من الخطوط المحلية) ===== */
+/* ملاحظة: wakeb-font يُستخدم عبر CSS الخاص به، ولكن يمكننا تطبيق الخط مباشرة */
+body {
+  font-family: 'Cairo', 'wakeb-font', sans-serif;
+}
+.zikr-text, .hadith-text, .story-text {
+  font-family: 'Amiri', 'wakeb-font', serif;
+}
+
+/* ===== dual-fonter (تحسين العرض للنصوص المزدوجة) ===== */
+.dual-text {
+  font-family: 'Cairo', 'Amiri', 'wakeb-font', sans-serif;
+}

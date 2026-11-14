@@ -1265,7 +1265,7 @@ async function scheduleNativeNotifications() {
         title: title,
         body: body,
         id: idCounter++,
-        schedule: { at: dateObj, allowWhileIdle: true },
+        schedule: { at: dateObj, allowWhileIdle: true }, // ضروري للعمل في وضع Doze
         sound: null,
         actionTypeId: 'OPEN_AZKAR',
         extra: { page: page }
@@ -1475,6 +1475,16 @@ function showNotifPrompt() {
     acceptBtn.textContent = 'جارٍ التجهيز...';
     acceptBtn.disabled = true;
 
+    // طلب استثناء التطبيق من تحسين البطارية (لضمان وصول الإشعارات)
+    if (window.Capacitor && window.Capacitor.Plugins.BatteryOptimization) {
+      try {
+        const { isExempt } = await window.Capacitor.Plugins.BatteryOptimization.isExempt();
+        if (!isExempt) {
+          await window.Capacitor.Plugins.BatteryOptimization.requestExemption();
+        }
+      } catch (e) { console.warn("Battery optimization request failed:", e); }
+    }
+
     // 1. طلب إذن الإشعارات
     if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
       const notifPerm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
@@ -1601,6 +1611,89 @@ if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Loc
 
 }
 
+
+// ===== الاهتزاز الخفيف (Haptic Feedback) =====
+function hapticLight() {
+  if (window.Capacitor && window.Capacitor.Plugins.RichHaptics) {
+    window.Capacitor.Plugins.RichHaptics.impact({ style: 'light' });
+  } else if (window.Capacitor && window.Capacitor.Plugins.Haptics) {
+    window.Capacitor.Plugins.Haptics.impact({ style: 'LIGHT' });
+  }
+}
+function hapticMedium() {
+  if (window.Capacitor && window.Capacitor.Plugins.Haptics) {
+    window.Capacitor.Plugins.Haptics.impact({ style: 'MEDIUM' });
+  }
+}
+
+
+// ===== التحكم في شريط الحالة =====
+async function updateStatusBar() {
+  if (!window.Capacitor || !window.Capacitor.Plugins.StatusBar) return;
+  const isDark = document.body.classList.contains('dark-mode');
+  try {
+    await window.Capacitor.Plugins.StatusBar.setStyle({
+      style: isDark ? 'DARK' : 'LIGHT'
+    });
+  } catch (e) {}
+}
+
+
+// ===== التحميل المسبق للصوتيات =====
+function preloadAudio() {
+  const audioUrls = [
+    'audio/morning.mp3', 'audio/evening.mp3', 'audio/falaq.mp3',
+    'audio/fatiha.mp3', 'audio/kursi.mp3', 'audio/sleep.mp3', 'audio/prayer.mp3'
+  ];
+  audioUrls.forEach(url => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'audio';
+    link.href = url;
+    document.head.appendChild(link);
+  });
+}
+
+
+// ===== مراقبة حالة الشبكة =====
+async function initNetworkMonitoring() {
+  if (window.Capacitor && window.Capacitor.Plugins.Network) {
+    const status = await window.Capacitor.Plugins.Network.getStatus();
+    if (!status.connected) showToast('لا يوجد اتصال بالإنترنت');
+    
+    window.Capacitor.Plugins.Network.addListener('networkStatusChange', (status) => {
+      if (!status.connected) showToast('انقطع الاتصال بالإنترنت');
+      else showToast('عاد الاتصال بالإنترنت');
+    });
+  }
+}
+
+
+// ===== مراقبة حرارة الجهاز =====
+async function initThermalMonitoring() {
+  if (window.Capacitor && window.Capacitor.Plugins.ThermalState) {
+    try {
+      const state = await window.Capacitor.Plugins.ThermalState.getThermalState();
+      if (state.thermalState === 'CRITICAL' || state.thermalState === 'SERIOUS') {
+        showToast('جهازك يسخن، قد يقل الأداء مؤقتاً');
+      }
+      window.Capacitor.Plugins.ThermalState.addListener('thermalStateChange', (state) => {
+        if (state.thermalState === 'CRITICAL') showToast('تحذير: حرارة الجهاز مرتفعة جداً');
+      });
+    } catch(e) {}
+  }
+}
+
+
+// ===== التحكم بحجم النص =====
+async function applyTextZoom(level) {
+  if (window.Capacitor && window.Capacitor.Plugins.TextZoom) {
+    try {
+      await window.Capacitor.Plugins.TextZoom.setZoom({ level: level });
+    } catch(e) {}
+  }
+}
+
 function onReady(fn) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
 function updateHijriDate() { const el = document.getElementById('hijriDate'); if (el) try { el.textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()); } catch (e) {} }
 function updateGreeting() { const name = SETTINGS.name.trim(); const html = name ? 'السلام عليكم، <strong>' + name + '</strong>' : 'السلام عليكم ورحمة الله'; document.querySelectorAll('.greeting').forEach(el => el.innerHTML = html); }
@@ -1617,7 +1710,8 @@ function renderZikrList(containerId, items) {
   container.querySelectorAll('.zikr-count').forEach(btn => {
     btn.addEventListener('click', function () {
       const max = parseInt(this.dataset.count, 10); let current = parseInt(this.dataset.current, 10);
-      if (current < max) { current++; this.dataset.current = current; this.textContent = `${current} / ${max}`; if (current === max) { this.classList.add('done'); this.textContent = 'تم'; playPop(); } }
+      if (current < max) { current++; this.dataset.current = current; this.textContent = `${current} / ${max}`; hapticLight();
+        if (current === max) { this.classList.add('done'); this.textContent = 'تم'; playPop(); } }
       else { this.dataset.current = 0; this.classList.remove('done'); this.textContent = max; }
       updateDailyProgress(containerId);
     });
@@ -2224,9 +2318,13 @@ if (window.Capacitor && window.Capacitor.Plugins.App) {
 
 onReady(() => {
   if (localStorage.getItem('azkar_theme') !== 'light') document.body.classList.add('dark-mode');
-  document.getElementById('themeToggle')?.addEventListener('click', () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('azkar_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); });
+  document.getElementById('themeToggle')?.addEventListener('click', () => { document.body.classList.toggle('dark-mode');
+  updateStatusBar(); localStorage.setItem('azkar_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); });
   updateHijriDate(); initSettings();
-  initNotifUI(); renderMore(); initAudio(); renderExtra(); renderStories(); renderDuas(); renderNames(); renderHadith();
+  initThermalMonitoring();
+  initNetworkMonitoring();
+  initNotifUI(); renderMore(); initAudio();
+  preloadAudio(); renderExtra(); renderStories(); renderDuas(); renderNames(); renderHadith();
   renderZikrList('morningList', AZKAR.morning); renderZikrList('eveningList', AZKAR.evening); renderZikrList('sleepList', AZKAR.sleep); renderZikrList('prayerList', AZKAR.prayer);
   document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => { switchPage(btn.dataset.target); if (btn.dataset.target === 'prayer-times') loadPrayerTimes(); }));
   
