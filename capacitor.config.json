@@ -2,6 +2,14 @@
   "appId": "com.zikr.tumaaneena",
   "appName": "ذكر و طمأنينة",
   "webDir": "www",
+  "android": {
+    "allowMixedContent": true,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  },
   "plugins": {
     "LocalNotifications": {
       "smallIcon": "ic_stat_icon_config_sample",

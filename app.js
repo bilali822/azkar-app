@@ -1420,6 +1420,7 @@ function initNotifUI() {
 }
 
 // مراقبة الرسائل القادمة من Service Worker (عند الضغط على الإشعار)
+/* تم إيقاف Service Worker في نسخة الـ APK لتسريع الإقلاع
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', (event) => {
     if (event.data && event.data.action === 'navigate' && event.data.page) {
@@ -1432,7 +1433,7 @@ if ('serviceWorker' in navigator) {
       }
     }
   });
-}
+}*/
 
 // تشغيل الفحص الدوري كل دقيقة
 setInterval(checkAndSendNotifications, 60000);
@@ -1490,7 +1491,11 @@ function renderStories() {
     // دالة مساعدة لتوليد النص التفصيلي (إذا لم يوجد تفصيل، نستخدم النص المختصر)
     const getDetails = (s) => s.details ? s.details : s.text;
 
-    container.innerHTML = (STORIES[cat]||[]).map((s, i) => `
+    
+    let visibleCount = 10;
+    const renderChunk = () => {
+      const data = STORIES[cat] || [];
+      container.innerHTML = data.slice(0, visibleCount).map((s, i) => `
       <div class="story-accordion" data-index="${i}">
         <button class="story-header">
           <span class="story-title">${s.title}</span>
@@ -1511,6 +1516,16 @@ function renderStories() {
         </div>
       </div>
     `).join('');
+      
+      if (visibleCount < data.length) {
+        const loadMoreBtn = document.createElement('button');
+        loadMoreBtn.className = 'load-more-btn';
+        loadMoreBtn.textContent = 'تحميل المزيد...';
+        loadMoreBtn.onclick = () => { visibleCount += 10; renderChunk(); };
+        container.appendChild(loadMoreBtn);
+      }
+    };
+    renderChunk();
 
     // أحداث فتح وإغلاق القصة
     container.querySelectorAll('.story-header').forEach(btn => {
@@ -1871,6 +1886,12 @@ function closeFullPlayer() {
 
 
 function switchPage(target) {
+  // إيقاف مؤقت المواقيت لتوفير البطارية
+  if (target !== 'prayer-times' && countdownInterval) {
+    clearInterval(countdownInterval);
+    countdownInterval = null;
+  }
+  
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelector(`.page[data-page="${target}"]`)?.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.target === target));
@@ -1996,6 +2017,43 @@ document.addEventListener('click', (e) => {
     shareContent(title, text, source);
   }
 });
+
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    if (countdownInterval) { clearInterval(countdownInterval); countdownInterval = null; }
+  } else {
+    // إعادة تشغيل المواقيت إذا كانت الصفحة مفتوحة
+    if (document.getElementById('page-prayer-times').classList.contains('active')) {
+      loadPrayerTimes();
+    }
+  }
+});
+
+
+// ===== التحكم في زر الرجوع الأندرويد =====
+if (window.Capacitor && window.Capacitor.Plugins.App) {
+  window.Capacitor.Plugins.App.addListener('backButton', ({ canGoBack }) => {
+    const fullPlayer = document.getElementById('fullPlayer');
+    const activePage = document.querySelector('.page.active');
+    
+    // 1. إغلاق المشغل الكامل إذا كان مفتوحاً
+    if (fullPlayer && !fullPlayer.classList.contains('hidden')) {
+      fullPlayer.classList.add('hidden');
+      return;
+    }
+    
+    // 2. العودة للصفحة الرئيسية (الصباح) إذا كان في صفحة أخرى
+    if (activePage && activePage.id !== 'page-morning') {
+      const homeBtn = document.querySelector('.nav-btn[data-target="morning"]');
+      if (homeBtn) homeBtn.click();
+      return;
+    }
+    
+    // 3. الخروج من التطبيق (إذا كان في الصفحة الرئيسية)
+    window.Capacitor.Plugins.App.exitApp();
+  });
+}
 
 onReady(() => {
   if (localStorage.getItem('azkar_theme') !== 'light') document.body.classList.add('dark-mode');

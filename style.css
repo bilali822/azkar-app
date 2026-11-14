@@ -682,3 +682,132 @@ body[data-font="naskh"] { --font-quran: 'Noto Naskh Arabic', serif; }
 .modal-btn.secondary {
   background: transparent; color: var(--text-muted);
 }
+
+/* ===== تحسينات الأداء القصوى للهواتف ===== */
+.app-header, .bottom-nav, .mini-player {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--bg-card) !important;
+  box-shadow: none !important;
+}
+
+/* تقليل الظلال الثقيلة */
+.zikr-card, .audio-card, .more-card, .name-card-new {
+  box-shadow: none !important;
+  border: 1px solid var(--border) !important;
+}
+
+/* تعطيل الأنميشن الثقيل أثناء التمرير */
+.page {
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* إخفاء شريط التمرير لتحسين المظهر والأداء */
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===== إزالة تأثيرات المتصفح المزعجة (جعل التطبيق يبدو أصلياً) ===== */
+
+/* 1. إزالة المربع الأزرق عند اللمس */
+* {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
+}
+
+/* 2. منع تحديد النصوص في الأزرار والقوائم (مع السماح بتحديد نصوص الأذكار) */
+button, .nav-btn, .zikr-count, .audio-play, .more-card, .share-btn, .settings-item, .story-header, .extra-cat-tab, .color-swatch, .font-option {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+}
+
+/* 3. إزالة الإطار الأزرق أو الأسود حول الأزرار عند الضغط */
+button:focus, a:focus, input:focus, select:focus, textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* 4. منع التكبير عند الضغط المزدوج السريع */
+body, button, a {
+  touch-action: manipulation;
+}
+
+/* 5. إزالة أي تأثير للظل الأزرق عند التمرير لأقصى حد */
+html, body {
+  overscroll-behavior: none;
+}
+
+.load-more-btn {
+  width: 100%; padding: 12px; margin-top: 10px;
+  background: var(--accent-soft); color: var(--accent);
+  border-radius: 12px; font-weight: 700; border: none;
+}
+
+/* ===== تحسينات الأداء المتقدمة ===== */
+.zikr-card, .story-accordion, .name-card-new, .dua-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 100px; /* يخبر المتصفح بحجم تقديري لتجنب القفز */
+}
+
+/* تحسين الرسم للهواتف */
+* {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* منع تحميل الخطوط من الشبكة أثناء التشغيل (لتسريع الفتح) */
+body {
+  font-display: swap;
+}
+
+/* ===== تحسينات الـ GPU والرسم ===== */
+.zikr-card, .more-card, .audio-card, .name-card-new {
+  /* إخبار المتصفح أن هذه العناصر لا تتغير أبعادها، فلا داعي لإعادة حسابها */
+  contain: layout style paint;
+  /* منع وميض الشاشة عند التمرير على الأجهزة الضعيفة */
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* منع تحريك العناصر التي لا تحتاج لحركة */
+.bottom-nav, .app-header {
+  will-change: transform;
+}
+
+/* تحسين الخطوط لمنع إعادة رسمها */
+* {
+  text-rendering: optimizeSpeed;
+}
+
+/* ===== استخدام الخطوط المحلية (بدون إنترنت) ===== */
+@font-face {
+  font-family: 'Amiri';
+  src: url('fonts/Amiri-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cairo';
+  src: url('fonts/Cairo-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ===== استخدام الخطوط المحلية (بدون إنترنت) ===== */
+@font-face {
+  font-family: 'Amiri';
+  src: url('fonts/Amiri-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cairo';
+  src: url('fonts/Cairo-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
