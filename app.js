@@ -1222,8 +1222,8 @@ async function scheduleNativeNotifications() {
   const userLat = parseFloat(localStorage.getItem('user_lat')) || 21.4225;
   const userLng = parseFloat(localStorage.getItem('user_lng')) || 39.8262;
 
-  // جدولة إشعارات لمدة 30 يوماً قادمة (390 إشعاراً، وهي أقل من حد الأندرويد 500)
-  for (let day = 0; day < 30; day++) {
+  // جدولة إشعارات لمدة 38 يوماً قادمة (494 إشعاراً، وهي الحد الأقصى الآمن لنظام أندرويد)
+  for (let day = 0; day < 38; day++) {
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + day);
 
