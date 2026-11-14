@@ -1,0 +1,11 @@
+{
+  "appId": "com.zikr.tumaaneena",
+  "appName": "ذكر و طمأنينة",
+  "webDir": "www",
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon_config_sample",
+      "iconColor": "#3a9e8f"
+    }
+  }
+}

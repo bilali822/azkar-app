@@ -1,0 +1,66 @@
+name: Build Capacitor APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare Web Assets
+        run: |
+          mkdir -p www
+          cp -r index.html style.css app.js manifest.json sw.js icons audio www/
+
+      - name: Add Android Platform
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Add Exact Alarm Permission
+        run: |
+          python3 -c "
+          import os
+          path = 'android/app/src/main/AndroidManifest.xml'
+          if os.path.exists(path):
+              content = open(path).read()
+              permission = '<uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\" />'
+              if permission not in content:
+                  content = content.replace('</manifest>', permission + '\\n</manifest>')
+                  open(path, 'w').write(content)
+          "
+
+      - name: Build APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Zikr-Capacitor-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk

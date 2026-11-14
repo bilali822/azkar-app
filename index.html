@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1b2a">
+  <title>ذكر و طمأنينة</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:,">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@300;400;600;700&family=Scheherazade+New:wght@400;700&family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <canvas id="starsCanvas"></canvas>
+
+  <div id="splash" class="splash">
+    <div class="splash-inner">
+      <svg class="splash-icon" viewBox="0 0 48 48" fill="none">
+        <path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4z" stroke="currentColor" stroke-width="2"/>
+        <path d="M24 14v12l8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <h1 class="splash-title">ذكر و طمأنينة</h1>
+      <p class="splash-sub">ذكرٌ وطمأنينة</p>
+      <p class="splash-quote">﴿ أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ ﴾</p>
+    </div>
+  </div>
+
+  <header class="app-header" id="appHeader">
+    <div class="header-inner">
+      <div class="header-brand">
+        <svg class="brand-icon" viewBox="0 0 32 32" fill="none">
+          <circle cx="16" cy="16" r="13" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M16 7v9l6 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span class="brand-text">ذكر و طمأنينة</span>
+        <span class="hijri-date" id="hijriDate"></span>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle" id="themeToggle" aria-label="تبديل الوضع">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
+        <button class="notif-toggle" id="notifToggle" aria-label="تفعيل الإشعارات">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="notif-dot" id="notifDot"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main" id="appMain">
+    <section class="page active" id="page-morning" data-page="morning">
+      <div class="ramadan-banner" id="ramadanBanner"><div class="ramadan-banner-title" id="ramadanTitle"></div><div class="ramadan-banner-days" id="ramadanDays"></div></div>
+      <div class="page-head"><p class="greeting" id="greetingMorning"></p><h2 class="page-title">أذكار الصباح</h2><p class="page-desc">تُقال بعد صلاة الفجر حتى طلوع الشمس</p><div class="daily-progress" id="morningProgress"></div></div>
+      <div class="zikr-list" id="morningList"></div>
+    </section>
+
+    <section class="page" id="page-evening" data-page="evening">
+      <div class="page-head"><p class="greeting" id="greetingEvening"></p><h2 class="page-title">أذكار المساء</h2><p class="page-desc">تُقال بعد صلاة العصر حتى غروب الشمس</p><div class="daily-progress" id="eveningProgress"></div></div>
+      <div class="zikr-list" id="eveningList"></div>
+    </section>
+
+    <section class="page" id="page-prayer-times" data-page="prayer-times">
+      <div class="page-head"><h2 class="page-title">مواقيت الصلاة</h2><p class="page-desc">أوقات الصلاة حسب موقعك الحالي</p></div>
+      <div class="countdown-card" id="countdownCard"><div class="countdown-label">الصلاة القادمة</div><div class="countdown-prayer" id="nextPrayerName">—</div><div class="countdown-timer" id="countdownTimer">—:—:—</div><div class="countdown-time" id="nextPrayerTime"></div></div>
+      <div class="prayer-times-grid" id="prayerTimesGrid"></div>
+    </section>
+
+    <section class="page" id="page-listen" data-page="listen">
+      <div class="page-head"><h2 class="page-title">استمع</h2><p class="page-desc">تلاوات وأصوات مباركة</p></div>
+      <div class="listen-grid" id="listenGrid"></div>
+    </section>
+
+    <section class="page" id="page-more" data-page="more">
+      <div class="page-head"><h2 class="page-title">المزيد</h2><p class="page-desc">استكشف بقية الأقسام</p></div>
+      <div class="more-grid" id="moreGrid"></div>
+    </section>
+
+    <section class="page" id="page-settings" data-page="settings">
+      <div class="page-head"><h2 class="page-title">الإعدادات</h2></div>
+      <div class="settings-section"><div class="settings-section-title">الاسم</div><input type="text" id="nameInput" class="settings-name-input" placeholder="أدخل اسمك"></div>
+      <div class="settings-section"><div class="settings-section-title">لون التطبيق</div><div class="color-options" id="colorOptions"></div></div>
+      <div class="settings-section"><div class="settings-section-title">الخط</div><div class="font-options" id="fontOptions"></div></div>
+      <div class="settings-section"><div class="settings-section-title">عن التطبيق</div><div class="settings-item"><span class="settings-label">قيّم التطبيق</span><button class="settings-action-btn" id="rateAppBtn">قيّم</button></div></div>
+    </section>
+
+    <section class="page" id="page-sleep" data-page="sleep"><div class="page-head"><h2 class="page-title">أذكار النوم</h2></div><div class="zikr-list" id="sleepList"></div></section>
+    <section class="page" id="page-prayer" data-page="prayer"><div class="page-head"><h2 class="page-title">أذكار الصلاة</h2></div><div class="zikr-list" id="prayerList"></div></section>
+    <section class="page" id="page-names" data-page="names"><div class="page-head"><h2 class="page-title">أسماء الله الحسنى</h2></div><div class="names-grid" id="namesGrid"></div></section>
+    <section class="page" id="page-hadith" data-page="hadith"><div class="page-head"><h2 class="page-title">حديث اليوم</h2></div><div class="hadith-card" id="hadithCard"></div></section>
+    <section class="page" id="page-extra" data-page="extra"><div class="page-head"><h2 class="page-title">أذكار أخرى</h2></div><div class="extra-cat-tabs" id="extraCatTabs"></div><div class="zikr-list" id="extraZikrList"></div></section>
+    <section class="page" id="page-stories" data-page="stories"><div class="page-head"><h2 class="page-title">قصص الأنبياء والصحابة</h2></div><div class="extra-cat-tabs" id="storiesCatTabs"></div><div id="storiesContainer"></div></section>
+    <section class="page" id="page-duas" data-page="duas"><div class="page-head"><h2 class="page-title">أدعية مستجابة</h2></div><div id="duasContainer"></div></section>
+  </main>
+
+  
+  <!-- المشغل المصغر -->
+  <div id="miniPlayer" class="mini-player hidden">
+    <div class="mini-cover" id="miniCover"></div>
+    <div class="mini-info" id="miniOpenBtn">
+      <div class="mini-title" id="miniTitle">—</div>
+      <div class="mini-sub" id="miniSub">—</div>
+    </div>
+    <button class="mini-btn" id="miniPlayBtn">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="mini-progress-bg"><div class="mini-progress-bar" id="miniProgressBar"></div></div>
+  </div>
+
+  <!-- المشغل الكامل -->
+  <div id="fullPlayer" class="full-player hidden">
+    <div class="fp-header">
+      <button class="fp-close" id="fpCloseBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <span class="fp-header-title">يتم التشغيل الآن</span>
+      <div style="width:24px;"></div>
+    </div>
+    
+    <div class="fp-cover-wrapper">
+      <div class="fp-cover" id="fpCover"></div>
+    </div>
+    
+    <div class="fp-info">
+      <h2 class="fp-title" id="fpTitle">—</h2>
+      <p class="fp-sub" id="fpSub">—</p>
+    </div>
+
+    <div class="fp-progress-container" id="fpProgressContainer">
+      <div class="fp-progress-bar" id="fpProgressBar"></div>
+    </div>
+    <div class="fp-times">
+      <span id="fpCurrentTime">0:00</span>
+      <span id="fpTotalTime">0:00</span>
+    </div>
+
+    <div class="fp-controls">
+      <button class="fp-btn" id="fpPrevBtn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      <button class="fp-play-btn" id="fpPlayBtn">
+        <svg viewBox="0 0 24 24" fill="currentColor" id="fpPlayIcon"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="fp-btn" id="fpNextBtn">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+      </button>
+    </div>
+
+    <div class="fp-extra-controls">
+      <button class="fp-speed-btn" id="fpSpeedBtn">1x</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" id="bottomNav">
+    <button class="nav-btn active" data-target="morning"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></span><span class="nav-label">الصباح</span></button>
+    <button class="nav-btn" data-target="evening"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span><span class="nav-label">المساء</span></button>
+    <button class="nav-btn" data-target="prayer-times"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span><span class="nav-label">المواقيت</span></button>
+    <button class="nav-btn" data-target="more"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span><span class="nav-label">المزيد</span></button>
+    <button class="nav-btn" data-target="settings"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nav-label">الإعدادات</span></button>
+  </nav>
+
+  <div class="share-toast" id="shareToast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/adhan@4.4.3/dist/adhan.min.js"></script>
+  <script src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <!-- نافذة طلب الإشعارات -->
+  <div id="notifPromptModal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+      </div>
+      <h2>لا تفوّت أذكارك</h2>
+      <p>فعّل الإشعارات ليصلك تنبيه بمواقيت الصلاة والأذكار اليومية، لتبدأ يومك بطمأنينة وذكر.</p>
+      <button id="acceptNotifBtn" class="modal-btn primary">تفعيل الإشعارات</button>
+      <button id="declineNotifBtn" class="modal-btn secondary">لاحقاً</button>
+    </div>
+  </div>
+
+</body>
+</html>
