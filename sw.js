@@ -1,4 +1,4 @@
-const CACHE_NAME = 'zikr-v61';
+const CACHE_NAME = 'zikr-v70';
 const ASSETS = ['/', '/index.html', '/style.css', '/app.js', '/manifest.json'];
 
 self.addEventListener('install', (event) => {

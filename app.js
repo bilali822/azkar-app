@@ -1151,6 +1151,38 @@ function calcPrayerTimesSilently() {
   } catch (e) { console.warn("Silent calc failed", e); }
 }
 
+
+// ==================== بيانات الإشعارات الشاملة ====================
+const NOTIF_MAWAIZ = [
+  'اتَّقِ اللَّهَ حَيْثُمَا كُنْتَ، وَأَتْبِعِ السَّيِّئَةَ الْحَسَنَةَ تَمْحُهَا، وَخَالِقِ النَّاسَ بِخُلُقٍ حَسَنٍ',
+  'الدُّنْيَا سِجْنُ الْمُؤْمِنِ وَجَنَّةُ الْكَافِرِ',
+  'مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الْآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ',
+  'إِنَّ الرِّفْقَ لَا يَكُونُ فِي شَيْءٍ إِلَّا زَانَهُ، وَلَا يُنْزَعُ مِنْ شَيْءٍ إِلَّا شَانَهُ',
+  'أَحَبُّ الْأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا وَإِنْ قَلَّ',
+  'مَنْ سَلَكَ طَرِيقًا يَبْتَغِي فِيهِ عِلْمًا، سَهَّلَ اللَّهُ لَهُ طَرِيقًا إِلَى الْجَنَّةِ',
+  'الطُّهُورُ شَطْرُ الْإِيمَانِ، وَالْحَمْدُ لِلَّهِ تَمْلَأُ الْمِيزَانَ',
+  'مَا نَقَصَتْ صَدَقَةٌ مِنْ مَالٍ، وَمَا زَادَ اللَّهُ عَبْدًا بِعَفْوٍ إِلَّا عِزًّا',
+  'لَا يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لِأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ',
+  'الْمُسْلِمُ مَنْ سَلِمَ الْمُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ'
+];
+
+const NOTIF_HADITHS = [
+  'قَالَ ﷺ: «مَنْ قَالَ سُبْحَانَ اللَّهِ وَبِحَمْدِهِ، فِي يَوْمٍ مِائَةَ مَرَّةٍ، حُطَّتْ خَطَايَاهُ»',
+  'قَالَ ﷺ: «كَلِمَتَانِ خَفِيفَتَانِ عَلَى اللِّسَانِ، ثَقِيلَتَانِ فِي الْمِيزَانِ: سُبْحَانَ اللَّهِ وَبِحَمْدِهِ»',
+  'قَالَ ﷺ: «مَنْ صَلَّى عَلَيَّ صَلَاةً صَلَّى اللَّهُ عَلَيْهِ بِهَا عَشْرًا»',
+  'قَالَ ﷺ: «مَنْ قَرَأَ حَرْفًا مِنْ كِتَابِ اللَّهِ فَلَهُ بِهِ حَسَنَةٌ»',
+  'قَالَ ﷺ: «مَنْ صَلَّى الْبَرْدَيْنِ دَخَلَ الْجَنَّةَ»'
+];
+
+function getHijriDate() {
+  try {
+    return new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
+  } catch(e) { return ''; }
+}
+
+function getRandomMawaiz(index) { return NOTIF_MAWAIZ[index % NOTIF_MAWAIZ.length]; }
+function getRandomHadith(index) { return NOTIF_HADITHS[index % NOTIF_HADITHS.length]; }
+
 function getNotifSettings() {
   return {
     prayer: localStorage.getItem('notif_prayer') !== 'false',
@@ -1205,94 +1237,100 @@ function showAdvancedNotification(title, body, page, vibrate = true) {
 
 
 // ===== جدولة الإشعارات الأصلية (تعمل حتى لو كان التطبيق مغلقاً) =====
+
 async function scheduleNativeNotifications() {
   if (!window.Capacitor || !window.Capacitor.Plugins.LocalNotifications) return;
   
   const settings = getNotifSettings();
-  if (!settings.prayer && !settings.morning && !settings.evening && !settings.sleep) return;
+  const notifPlugin = window.Capacitor.Plugins.LocalNotifications;
 
-  // طلب الإذن أولاً
-  const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
-  if (perm.display !== 'granted') return;
+  // مسح الإشعارات القديمة لتجنب التكرار
+  await notifPlugin.cancel();
 
   const notifications = [];
   let idCounter = 1;
   const today = new Date();
 
-  const userLat = parseFloat(localStorage.getItem('user_lat')) || 21.4225;
-  const userLng = parseFloat(localStorage.getItem('user_lng')) || 39.8262;
+  // جلب الموقع المحفوظ
+  let lat = parseFloat(localStorage.getItem('user_lat')) || 21.4225;
+  let lng = parseFloat(localStorage.getItem('user_lng')) || 39.8262;
 
-  // جدولة إشعارات لمدة 38 يوماً قادمة (494 إشعاراً، وهي الحد الأقصى الآمن لنظام أندرويد)
+  const coords = new adhan.Coordinates(lat, lng);
+  const params = adhan.CalculationMethod.UmmAlQura();
+
+  // دالة مساعدة لإضافة إشعار
+  const addNotif = (dateObj, title, body, page) => {
+    if (dateObj > new Date() && notifications.length < 490) {
+      notifications.push({
+        title: title,
+        body: body,
+        id: idCounter++,
+        schedule: { at: dateObj, allowWhileIdle: true },
+        sound: null,
+        actionTypeId: 'OPEN_AZKAR',
+        extra: { page: page }
+      });
+    }
+  };
+
+  // جدولة 38 يوماً
   for (let day = 0; day < 38; day++) {
     const targetDate = new Date(today);
     targetDate.setDate(today.getDate() + day);
-
-    // حساب مواقيت ذلك اليوم
-    const coords = new adhan.Coordinates(userLat, userLng);
-    const params = adhan.CalculationMethod.UmmAlQura();
+    
     const times = new adhan.PrayerTimes(coords, targetDate, params);
+    const hijri = getHijriDate();
+    const mawaiza = getRandomMawaiz(day);
+    const hadith = getRandomHadith(day);
 
-    const scheduleAt = (dateObj, title, body, page) => {
-      if (dateObj > new Date()) {
-        notifications.push({
-          title: title,
-          body: body,
-          id: idCounter++,
-          schedule: { at: dateObj, allowWhileIdle: true },
-          sound: null,
-          attachments: null,
-          actionTypeId: 'OPEN_AZKAR',
-          extra: { page: page }
-        });
-      }
-    };
+    const formatTime = (d) => d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', hour12: true });
+    const addMins = (d, m) => new Date(d.getTime() + m * 60000);
 
-    // إشعارات الصلاة وأذكارها
-    if (settings.prayer) {
-      const addMins = (d, m) => new Date(d.getTime() + m * 60000);
-      scheduleAt(times.fajr, 'حان وقت صلاة الفجر', 'الصلاة خير من النوم', 'prayer');
-      scheduleAt(addMins(times.fajr, 15), 'أذكار ما بعد الفجر', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
-      
-      scheduleAt(times.dhuhr, 'حان وقت صلاة الظهر', 'أقم الصلاة', 'prayer');
-      scheduleAt(addMins(times.dhuhr, 15), 'أذكار ما بعد الظهر', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
-      
-      scheduleAt(times.asr, 'حان وقت صلاة العصر', 'أقم الصلاة', 'prayer');
-      scheduleAt(addMins(times.asr, 15), 'أذكار ما بعد العصر', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
-      
-      scheduleAt(times.maghrib, 'حان وقت صلاة المغرب', 'أقم الصلاة', 'prayer');
-      scheduleAt(addMins(times.maghrib, 15), 'أذكار ما بعد المغرب', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
-      
-      scheduleAt(times.isha, 'حان وقت صلاة العشاء', 'أقم الصلاة', 'prayer');
-      scheduleAt(addMins(times.isha, 15), 'أذكار ما بعد العشاء', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
+    // --- 1. منبه الفجر ---
+    if (settings.fajrAlarm) {
+      addNotif(new Date(times.fajr.getTime() - 30 * 60000), 'منبه الفجر', `الصلاة خير من النوم\n⏰ ${formatTime(times.fajr)}\n📅 ${hijri}`, 'prayer-times');
     }
 
-    // أذكار الصباح (بعد الفجر بـ 30 دقيقة)
+    // --- 2. أذكار الصباح (بعد الفجر 30 دقيقة) ---
     if (settings.morning) {
-      scheduleAt(new Date(times.fajr.getTime() + 30 * 60000), 'أذكار الصباح', 'ابدأ يومك بذكر الله وطمأنينة القلب', 'morning');
+      addNotif(addMins(times.fajr, 30), 'أذكار الصباح', `${mawaiza}\n⏰ ${formatTime(times.fajr)}\n📅 ${hijri}`, 'morning');
     }
 
-    // أذكار المساء (بعد العصر بـ 30 دقيقة)
+    // --- 3. تذكير بعد كل صلاة (أذكار الصلاة) ---
+    if (settings.prayer) {
+      const pTimes = [
+        { name: 'الفجر', time: times.fajr },
+        { name: 'الظهر', time: times.dhuhr },
+        { name: 'العصر', time: times.asr },
+        { name: 'المغرب', time: times.maghrib },
+        { name: 'العشاء', time: times.isha }
+      ];
+      pTimes.forEach((p, idx) => {
+        addNotif(addMins(p.time, 15), `أذكار ما بعد صلاة ${p.name}`, `${getRandomMawaiz(day + idx)}\n⏰ ${formatTime(p.time)}\n📅 ${hijri}`, 'prayer');
+      });
+    }
+
+    // --- 4. أذكار المساء (بعد العصر 30 دقيقة) ---
     if (settings.evening) {
-      scheduleAt(new Date(times.asr.getTime() + 30 * 60000), 'أذكار المساء', 'اختم يومك بذكر الله وحفظه', 'evening');
+      addNotif(addMins(times.asr, 30), 'أذكار المساء', `${mawaiza}\n⏰ ${formatTime(times.asr)}\n📅 ${hijri}`, 'evening');
     }
 
-    // أذكار النوم (بعد العشاء بـ 60 دقيقة)
+    // --- 5. أذكار النوم (بعد العشاء 60 دقيقة) ---
     if (settings.sleep) {
-      scheduleAt(new Date(times.isha.getTime() + 60 * 60000), 'أذكار النوم', 'لا تنسَ أذكار النوم قبل أن تأوي إلى فراشك', 'sleep');
+      addNotif(addMins(times.isha, 60), 'أذكار النوم', `${mawaiza}\n⏰ ${formatTime(times.isha)}\n📅 ${hijri}`, 'sleep');
+    }
+
+    // --- 6. حديث اليوم (ظهراً) ---
+    if (settings.hadith) {
+      addNotif(new Date(targetDate.setHours(12, 0, 0)), 'حديث اليوم', `${hadith}\n📅 ${hijri}`, 'hadith');
     }
   }
 
   if (notifications.length > 0) {
-    await window.Capacitor.Plugins.LocalNotifications.cancel();
-    await window.Capacitor.Plugins.LocalNotifications.schedule({ notifications });
-    console.log("✅ تم جدولة " + notifications.length + " إشعاراً بنجاح");
+    await notifPlugin.schedule({ notifications });
+    console.log(`✅ تم جدولة ${notifications.length} إشعاراً بنجاح!`);
   }
 }
-
-// استدعاء الجدولة عند فتح التطبيق
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(scheduleNativeNotifications, 3000);
-});
 
 function checkAndSendNotifications() {
   if (Notification.permission !== 'granted') return;
@@ -1432,16 +1470,51 @@ function showNotifPrompt() {
   const acceptBtn = document.getElementById('acceptNotifBtn');
   const declineBtn = document.getElementById('declineNotifBtn');
 
+
   acceptBtn.onclick = async () => {
+    acceptBtn.textContent = 'جارٍ التجهيز...';
+    acceptBtn.disabled = true;
+
+    // 1. طلب إذن الإشعارات
     if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
-      await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
-      await scheduleNativeNotifications(); // جدولة الإشعارات فور الموافقة
-    } else {
-      await requestNotificationPermission();
+      const notifPerm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+      
+      // 2. طلب إذن الموقع
+      if (window.Capacitor.Plugins.Geolocation) {
+        const geoPerm = await window.Capacitor.Plugins.Geolocation.requestPermissions();
+        if (geoPerm.location === 'granted') {
+          try {
+            const pos = await window.Capacitor.Plugins.Geolocation.getCurrentPosition();
+            localStorage.setItem('user_lat', pos.coords.latitude);
+            localStorage.setItem('user_lng', pos.coords.longitude);
+          } catch(e) {}
+        }
+      }
+
+      // 3. إرسال إشعار ترحيبي فوري
+      if (notifPerm.display === 'granted') {
+        const now = new Date();
+        await window.Capacitor.Plugins.LocalNotifications.schedule({
+          notifications: [{
+            title: 'أهلاً بك في ذكر و طمأنينة',
+            body: 'نسأل الله أن يجعل هذا التطبيق نافعاً لك. ' + NOTIF_MAWAIZ[0],
+            id: 9999,
+            schedule: { at: new Date(now.getTime() + 2000) }, // بعد ثانيتين
+            sound: null,
+            actionTypeId: 'OPEN_AZKAR',
+            extra: { page: 'morning' }
+          }]
+        });
+
+        // 4. جدولة جميع الإشعارات المستقبلية
+        await scheduleNativeNotifications();
+      }
     }
+    
     modal.classList.add('hidden');
     localStorage.setItem('notif_prompt_shown', 'true');
   };
+
 
   declineBtn.onclick = () => {
     modal.classList.add('hidden');
@@ -1506,6 +1579,27 @@ if ('serviceWorker' in navigator) {
 
 // تشغيل الفحص الدوري كل دقيقة
 setInterval(checkAndSendNotifications, 60000);
+
+
+// حماية الكود ليعمل فقط على الهاتف (Capacitor) ولا يتعطل في المتصفح
+if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+  
+// حماية الكود ليعمل فقط على الهاتف (Capacitor) ولا يتعطل في المتصفح
+if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) {
+  window.Capacitor.Plugins.LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
+    if (notification.notification.extra && notification.notification.extra.page) {
+      const page = notification.notification.extra.page;
+      const btn = document.querySelector(`.nav-btn[data-target="${page}"]`);
+      if (btn) btn.click();
+      else {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${page}`)?.classList.add('active');
+      }
+    }
+  });
+}
+
+}
 
 function onReady(fn) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
 function updateHijriDate() { const el = document.getElementById('hijriDate'); if (el) try { el.textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date()); } catch (e) {} }
