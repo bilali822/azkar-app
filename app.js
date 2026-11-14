@@ -791,11 +791,10 @@ const SETTINGS = {
 
 
 
+
+
 async function shareContent(title, text, source) {
-  // 1. فحص وضع التطبيق الحالي (ليلي أم نهاري)
   const isDark = document.body.classList.contains('dark-mode');
-  
-  // 2. تحديد الألوان بناءً على الوضع
   const bgColor = isDark ? 'linear-gradient(135deg, #0d1b2a, #1b263b)' : '#f5f0e8';
   const textColor = isDark ? '#e8edf2' : '#1a1a1a';
   const sourceColor = isDark ? '#8a9aa8' : '#5a5a5a';
@@ -803,79 +802,52 @@ async function shareContent(title, text, source) {
   const canvasBg = isDark ? '#0d1b2a' : '#f5f0e8';
 
   const wrapper = document.createElement('div');
-  wrapper.style.cssText = `
-    position: fixed; left: -9999px; top: 0;
-    width: 600px; padding: 50px 40px;
-    background: ${bgColor};
-    color: ${textColor};
-    font-family: 'Amiri', serif;
-    direction: rtl; text-align: center;
-    border-radius: 24px;
-    border: 2px solid #3a9e8f;
-    z-index: 9999;
-    box-sizing: border-box;
-  `;
-
-  let html = `
-    <div style="margin-bottom: 30px;">
-      <svg xmlns="http://www.w3.org/2000/svg" style="width:40px; height:40px; color:#3a9e8f;" viewBox="0 0 48 48" fill="none">
-        <path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4z" stroke="currentColor" stroke-width="2"/>
-        <path d="M24 14v12l8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-      <div style="font-family: 'Cairo', sans-serif; font-size: 18px; font-weight: 700; color: #3a9e8f; margin-top: 10px;">ذكر و طمأنينة</div>
-    </div>
-  `;
-
-  if (title) {
-    html += `<div style="font-family: 'Cairo', sans-serif; font-size: 22px; color: #3a9e8f; margin-bottom: 20px; font-weight: 700;">${title}</div>`;
-  }
-
+  wrapper.style.cssText = `position: fixed; left: 0; top: 0; opacity: 0; pointer-events: none; width: 600px; padding: 50px 40px; background: ${bgColor}; color: ${textColor}; font-family: 'Amiri', serif; direction: rtl; text-align: center; border-radius: 24px; border: 2px solid #3a9e8f; z-index: -100; box-sizing: border-box;`;
+  
+  let html = `<div style="margin-bottom: 30px;"><svg xmlns="http://www.w3.org/2000/svg" style="width:40px; height:40px; color:#3a9e8f;" viewBox="0 0 48 48" fill="none"><path d="M24 4C13 4 4 13 4 24s9 20 20 20 20-9 20-20S35 4 24 4z" stroke="currentColor" stroke-width="2"/><path d="M24 14v12l8 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><div style="font-family: 'Cairo', sans-serif; font-size: 18px; font-weight: 700; color: #3a9e8f; margin-top: 10px;">ذكر و طمأنينة</div></div>`;
+  if (title) html += `<div style="font-family: 'Cairo', sans-serif; font-size: 22px; color: #3a9e8f; margin-bottom: 20px; font-weight: 700;">${title}</div>`;
   html += `<div style="font-size: 32px; line-height: 2.2; margin-bottom: 30px; color: ${textColor};">${text}</div>`;
-
-  if (source) {
-    html += `
-      <div style="font-family: 'Cairo', sans-serif; font-size: 16px; color: ${sourceColor}; border-top: 1px solid ${borderColor}; padding-top: 20px;">
-        ${source}
-      </div>
-    `;
-  }
+  if (source) html += `<div style="font-family: 'Cairo', sans-serif; font-size: 16px; color: ${sourceColor}; border-top: 1px solid ${borderColor}; padding-top: 20px;">${source}</div>`;
 
   wrapper.innerHTML = html;
   document.body.appendChild(wrapper);
 
   try {
     await document.fonts.ready;
-    
-    if (typeof html2canvas === 'undefined') throw new Error("html2canvas missing");
-    
-    const canvas = await html2canvas(wrapper, { 
-      backgroundColor: canvasBg, 
-      scale: 2, 
-      useCORS: true,
-      logging: false,
-      allowTaint: true 
-    });
-    
+    const canvas = await html2canvas(wrapper, { backgroundColor: canvasBg, scale: 2, useCORS: true, logging: false, allowTaint: true });
     document.body.removeChild(wrapper);
 
-    canvas.toBlob(async (blob) => {
-      if (!blob) return fallbackShare(title, text, source);
-      const file = new File([blob], 'zikr-share.png', { type: 'image/png' });
+    if (window.Capacitor && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Share) {
+      const base64Data = canvas.toDataURL('image/png').split(',')[1];
+      const fileName = 'zikr_share_' + Date.now() + '.png';
       
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: 'ذكر و طمأنينة', text: 'مشاركة من تطبيق ذكر و طمأنينة' });
-        } catch (e) {
-          if (e.name !== 'AbortError') downloadBlob(blob);
-        }
-      } else {
-        downloadBlob(blob);
-      }
-    }, 'image/png');
+      await window.Capacitor.Plugins.Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: 'CACHE'
+      });
+
+      const fileUri = await window.Capacitor.Plugins.Filesystem.getUri({ path: fileName, directory: 'CACHE' });
+      
+      await window.Capacitor.Plugins.Share.share({
+        title: 'ذكر و طمأنينة',
+        text: 'مشاركة من تطبيق ذكر و طمأنينة',
+        files: [fileUri.uri],
+        dialogTitle: 'مشاركة'
+      });
+    } else {
+      canvas.toBlob(async (blob) => {
+        const file = new File([blob], 'zikr-share.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try { await navigator.share({ files: [file], title: 'ذكر و طمأنينة' }); }
+          catch (e) { if (e.name !== 'AbortError') downloadBlob(blob); }
+        } else { downloadBlob(blob); }
+      }, 'image/png');
+    }
   } catch (e) {
-    console.warn("html2canvas failed, falling back to text copy:", e);
+    console.error("Share error:", e);
     if (wrapper.parentNode) document.body.removeChild(wrapper);
-    fallbackShare(title, text, source);
+    alert('حدث خطأ أثناء المشاركة.');
   }
 }
 
@@ -1197,15 +1169,19 @@ function saveNotifSetting(key, val) {
   localStorage.setItem('notif_' + key, val);
 }
 
+
+
 async function requestNotificationPermission() {
-  if (!('Notification' in window)) {
-    alert('متصفحك لا يدعم الإشعارات.');
-    return false;
+  if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
+    const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+    return perm.display === 'granted';
   }
+  if (!('Notification' in window)) return false;
   if (Notification.permission === 'granted') return true;
-  const permission = await Notification.requestPermission();
-  return permission === 'granted';
+  return (await Notification.requestPermission()) === 'granted';
 }
+
+
 
 function showAdvancedNotification(title, body, page, vibrate = true) {
   if (Notification.permission !== 'granted') return;
@@ -1226,6 +1202,97 @@ function showAdvancedNotification(title, body, page, vibrate = true) {
   });
 }
 
+
+
+// ===== جدولة الإشعارات الأصلية (تعمل حتى لو كان التطبيق مغلقاً) =====
+async function scheduleNativeNotifications() {
+  if (!window.Capacitor || !window.Capacitor.Plugins.LocalNotifications) return;
+  
+  const settings = getNotifSettings();
+  if (!settings.prayer && !settings.morning && !settings.evening && !settings.sleep) return;
+
+  // طلب الإذن أولاً
+  const perm = await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+  if (perm.display !== 'granted') return;
+
+  const notifications = [];
+  let idCounter = 1;
+  const today = new Date();
+
+  const userLat = parseFloat(localStorage.getItem('user_lat')) || 21.4225;
+  const userLng = parseFloat(localStorage.getItem('user_lng')) || 39.8262;
+
+  // جدولة إشعارات لمدة 30 يوماً قادمة (390 إشعاراً، وهي أقل من حد الأندرويد 500)
+  for (let day = 0; day < 30; day++) {
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + day);
+
+    // حساب مواقيت ذلك اليوم
+    const coords = new adhan.Coordinates(userLat, userLng);
+    const params = adhan.CalculationMethod.UmmAlQura();
+    const times = new adhan.PrayerTimes(coords, targetDate, params);
+
+    const scheduleAt = (dateObj, title, body, page) => {
+      if (dateObj > new Date()) {
+        notifications.push({
+          title: title,
+          body: body,
+          id: idCounter++,
+          schedule: { at: dateObj, allowWhileIdle: true },
+          sound: null,
+          attachments: null,
+          actionTypeId: 'OPEN_AZKAR',
+          extra: { page: page }
+        });
+      }
+    };
+
+    // إشعارات الصلاة وأذكارها
+    if (settings.prayer) {
+      const addMins = (d, m) => new Date(d.getTime() + m * 60000);
+      scheduleAt(times.fajr, 'حان وقت صلاة الفجر', 'الصلاة خير من النوم', 'prayer');
+      scheduleAt(addMins(times.fajr, 15), 'أذكار ما بعد الفجر', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
+      
+      scheduleAt(times.dhuhr, 'حان وقت صلاة الظهر', 'أقم الصلاة', 'prayer');
+      scheduleAt(addMins(times.dhuhr, 15), 'أذكار ما بعد الظهر', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
+      
+      scheduleAt(times.asr, 'حان وقت صلاة العصر', 'أقم الصلاة', 'prayer');
+      scheduleAt(addMins(times.asr, 15), 'أذكار ما بعد العصر', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
+      
+      scheduleAt(times.maghrib, 'حان وقت صلاة المغرب', 'أقم الصلاة', 'prayer');
+      scheduleAt(addMins(times.maghrib, 15), 'أذكار ما بعد المغرب', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
+      
+      scheduleAt(times.isha, 'حان وقت صلاة العشاء', 'أقم الصلاة', 'prayer');
+      scheduleAt(addMins(times.isha, 15), 'أذكار ما بعد العشاء', 'لا تنسَ أذكار ما بعد الصلاة', 'prayer');
+    }
+
+    // أذكار الصباح (بعد الفجر بـ 30 دقيقة)
+    if (settings.morning) {
+      scheduleAt(new Date(times.fajr.getTime() + 30 * 60000), 'أذكار الصباح', 'ابدأ يومك بذكر الله وطمأنينة القلب', 'morning');
+    }
+
+    // أذكار المساء (بعد العصر بـ 30 دقيقة)
+    if (settings.evening) {
+      scheduleAt(new Date(times.asr.getTime() + 30 * 60000), 'أذكار المساء', 'اختم يومك بذكر الله وحفظه', 'evening');
+    }
+
+    // أذكار النوم (بعد العشاء بـ 60 دقيقة)
+    if (settings.sleep) {
+      scheduleAt(new Date(times.isha.getTime() + 60 * 60000), 'أذكار النوم', 'لا تنسَ أذكار النوم قبل أن تأوي إلى فراشك', 'sleep');
+    }
+  }
+
+  if (notifications.length > 0) {
+    await window.Capacitor.Plugins.LocalNotifications.cancel();
+    await window.Capacitor.Plugins.LocalNotifications.schedule({ notifications });
+    console.log("✅ تم جدولة " + notifications.length + " إشعاراً بنجاح");
+  }
+}
+
+// استدعاء الجدولة عند فتح التطبيق
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(scheduleNativeNotifications, 3000);
+});
 
 function checkAndSendNotifications() {
   if (Notification.permission !== 'granted') return;
@@ -1366,9 +1433,11 @@ function showNotifPrompt() {
   const declineBtn = document.getElementById('declineNotifBtn');
 
   acceptBtn.onclick = async () => {
-    const granted = await requestNotificationPermission();
-    if (granted) {
-      showAdvancedNotification('تم التفعيل بنجاح', 'ستصلك تنبيهات الأذكار ومواقيت الصلاة بإذن الله.', 'morning', false);
+    if (window.Capacitor && window.Capacitor.Plugins.LocalNotifications) {
+      await window.Capacitor.Plugins.LocalNotifications.requestPermissions();
+      await scheduleNativeNotifications(); // جدولة الإشعارات فور الموافقة
+    } else {
+      await requestNotificationPermission();
     }
     modal.classList.add('hidden');
     localStorage.setItem('notif_prompt_shown', 'true');
@@ -1943,7 +2012,11 @@ function loadPrayerTimes() {
     }
   };
 
-  if (navigator.geolocation) {
+  if (window.Capacitor && window.Capacitor.Plugins.Geolocation) {
+    window.Capacitor.Plugins.Geolocation.getCurrentPosition({ enableHighAccuracy: true })
+      .then(pos => computeTimes(pos.coords.latitude, pos.coords.longitude))
+      .catch(() => computeTimes(fallbackCoords.lat, fallbackCoords.lng));
+  } else if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
       pos => computeTimes(pos.coords.latitude, pos.coords.longitude),
       () => computeTimes(fallbackCoords.lat, fallbackCoords.lng),

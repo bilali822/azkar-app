@@ -1,4 +1,4 @@
-name: Build Capacitor APK (Full Screen & Fast)
+name: Build Capacitor APK (Fixed Permissions & Share)
 
 on:
   push:
@@ -39,7 +39,7 @@ jobs:
           cleancss -o www/style.css style.css
           html-minifier-terser --collapse-whitespace --remove-comments --minify-css true --minify-js true -o www/index.html index.html
           cp manifest.json sw.js www/ 2>/dev/null || true
-          cp -r icons audio fonts www/
+          cp -r icons audio fonts js www/
           mkdir -p assets && cp icons/icon-512.png assets/icon.png
 
       - name: Add Android Platform & Icons
@@ -47,31 +47,33 @@ jobs:
           npx cap add android
           npx capacitor-assets generate --android
 
-      - name: Patch Android for Full Screen & Performance
+      - name: Patch Android for Full Screen & Permissions
         run: |
-          # 1. تعديل AndroidManifest (زيادة الذاكرة ومنع تسريب البيانات)
+          # 1. إضافة الصلاحيات إلى AndroidManifest
           python3 -c "
           import os
           path = 'android/app/src/main/AndroidManifest.xml'
           content = open(path).read()
+          
+          perms = [
+              'android.permission.ACCESS_FINE_LOCATION',
+              'android.permission.ACCESS_COARSE_LOCATION',
+              'android.permission.POST_NOTIFICATIONS',
+              'android.permission.SCHEDULE_EXACT_ALARM'
+          ]
+          for p in perms:
+              if p not in content:
+                  content = content.replace('</manifest>', f'<uses-permission android:name=\"{p}\" />\\n</manifest>')
+          
           if 'largeHeap' not in content:
               content = content.replace('<application', '<application android:largeHeap=\"true\"')
-          
-          # إخفاء شريط الحالة من الثيم الافتراضي
-          if 'android:theme' not in content:
-              content = content.replace('<activity', '<activity android:theme=\"@style/AppTheme.NoActionBar\"')
-              
-          permission = '<uses-permission android:name=\"android.permission.SCHEDULE_EXACT_ALARM\" />'
-          if permission not in content:
-              content = content.replace('</manifest>', permission + '\\n</manifest>')
           open(path, 'w').write(content)
           "
 
-          # 2. كتابة MainActivity.java مخصص لفرض الشاشة الكاملة (Immersive Mode)
+          # 2. كتابة MainActivity.java لفرض الشاشة الكاملة
           mkdir -p android/app/src/main/java/com/zikr/tumaaneena
           cat > android/app/src/main/java/com/zikr/tumaaneena/MainActivity.java << 'JAVAEOF'
           package com.zikr.tumaaneena;
-
           import com.getcapacitor.BridgeActivity;
           import android.os.Bundle;
           import androidx.core.view.WindowCompat;
@@ -82,19 +84,12 @@ jobs:
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-
-                  // إخفاء شريط الحالة (الإشعارات) وشريط التنقل (الأزرار السفلية)
                   WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-                  WindowInsetsControllerCompat windowInsetsController =
-                          WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+                  WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
                   if (windowInsetsController != null) {
                       windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
-                      // إظهار الأشرطة مؤقتاً عند السحب من الحافة
-                      windowInsetsController.setSystemBarsBehavior(
-                              WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                      windowInsetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                   }
-
-                  // تحسينات الأداء
                   getBridge().getWebView().setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null);
                   getBridge().getWebView().getSettings().setDomStorageEnabled(true);
                   getBridge().getWebView().getSettings().setJavaScriptEnabled(true);
@@ -103,7 +98,7 @@ jobs:
           }
           JAVAEOF
 
-          # 3. تفعيل تصغير الكود وحذف الموارد غير المستخدمة
+          # 3. تصغير الكود
           python3 -c "
           import os
           path = 'android/app/build.gradle'
@@ -125,5 +120,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Zikr-FullScreen-APK
+          name: Zikr-Fixed-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
