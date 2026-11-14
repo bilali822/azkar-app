@@ -32,98 +32,27 @@ jobs:
           npm install @capacitor/assets --legacy-peer-deps
           npm install -g javascript-obfuscator terser html-minifier-terser clean-css-cli
 
-      - name: Obfuscate and Compress Web Assets
-        run: |
-          mkdir -p www
-          javascript-obfuscator app.js --output www/app.js --compact true --control-flow-flattening false --dead-code-injection false --string-array true --string-array-rotate true --string-array-shuffle true
-          cleancss -o www/style.css style.css
-          html-minifier-terser --collapse-whitespace --remove-comments --minify-css true --minify-js true -o www/index.html index.html
-          cp manifest.json sw.js www/ 2>/dev/null || true
-          cp -r icons audio fonts js www/
-          mkdir -p assets && cp icons/icon-512.png assets/icon.png
+      - name: 1. Build & Obfuscate Web Assets
+        run: bash scripts/build_assets.sh
 
-      - name: Add Android Platform & Icons
+      - name: 2. Add Android Platform & Generate Icons
         run: |
           npx cap add android
           npx capacitor-assets generate --android
 
-      - name: Patch Android for Full Screen & Permissions
-        run: |
-          # 1. إضافة الصلاحيات إلى AndroidManifest
-          python3 - << 'PYEOF'
-import os
-path = 'android/app/src/main/AndroidManifest.xml'
-content = open(path).read()
+      - name: 3. Patch Android (Full Screen, Permissions, Performance)
+        run: python3 scripts/patch_android.py
 
-perms = [
-    'android.permission.ACCESS_FINE_LOCATION',
-    'android.permission.ACCESS_COARSE_LOCATION',
-    'android.permission.POST_NOTIFICATIONS',
-    'android.permission.SCHEDULE_EXACT_ALARM',
-    'android.permission.USE_EXACT_ALARM',
-    'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS'
-]
-
-for p in perms:
-    if p not in content:
-        content = content.replace('</manifest>', f'<uses-permission android:name="{p}" />\n</manifest>')
-
-if 'largeHeap' not in content:
-    content = content.replace('<application', '<application android:largeHeap="true" android:hardwareAccelerated="true"')
-
-open(path, 'w').write(content)
-print("✅ Permissions added successfully")
-PYEOF
-
-          # 2. كتابة MainActivity.java لفرض الشاشة الكاملة
-          mkdir -p android/app/src/main/java/com/zikr/tumaaneena
-          cat > android/app/src/main/java/com/zikr/tumaaneena/MainActivity.java << 'JAVAEOF'
-          package com.zikr.tumaaneena;
-          import com.getcapacitor.BridgeActivity;
-          import android.os.Bundle;
-          import androidx.core.view.WindowCompat;
-          import androidx.core.view.WindowInsetsCompat;
-          import androidx.core.view.WindowInsetsControllerCompat;
-
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-                  WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-                  if (windowInsetsController != null) {
-                      windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
-                      windowInsetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-                  }
-                  getBridge().getWebView().setLayerType(android.view.View.LAYER_TYPE_HARDWARE, null);
-                  getBridge().getWebView().getSettings().setDomStorageEnabled(true);
-                  getBridge().getWebView().getSettings().setJavaScriptEnabled(true);
-                  getBridge().getWebView().setOverScrollMode(android.view.View.OVER_SCROLL_NEVER);
-              }
-          }
-          JAVAEOF
-
-          # 3. تصغير الكود وحذف الموارد غير المستخدمة
-          python3 - << 'PYEOF'
-import os
-path = 'android/app/build.gradle'
-content = open(path).read()
-if 'shrinkResources true' not in content:
-    content = content.replace('minifyEnabled false', 'minifyEnabled true\n            shrinkResources true')
-    open(path, 'w').write(content)
-print("✅ Gradle configured successfully")
-PYEOF
-
-      - name: Sync Capacitor
+      - name: 4. Sync Web Assets to Android
         run: npx cap sync android
 
-      - name: Build APK
+      - name: 5. Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: 6. Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Zikr-Final-APK
