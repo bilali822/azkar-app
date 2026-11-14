@@ -28,8 +28,8 @@ jobs:
 
       - name: Install dependencies & Tools
         run: |
-          npm install
-          npm install @capacitor/assets
+          npm install --legacy-peer-deps
+          npm install @capacitor/assets --legacy-peer-deps
           npm install -g javascript-obfuscator terser html-minifier-terser clean-css-cli
 
       - name: Obfuscate and Compress Web Assets

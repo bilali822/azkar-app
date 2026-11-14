@@ -16,7 +16,6 @@
     "@capacitor/text-zoom": "^6.0.0",
     "@capawesome-team/capacitor-android-battery-optimization": "^6.0.0",
     "@capawesome/capacitor-live-update": "^6.0.0",
-    "@capawesome/capacitor-thermal-state": "^0.1.2",
     "capacitor-rich-haptics": "^6.0.0"
   },
   "devDependencies": {
